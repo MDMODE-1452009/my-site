@@ -1,11 +1,79 @@
 <!DOCTYPE html>
 <html lang="ar">
 <head>
-  <meta charset="UTF-8">
-    <title>موقعي</title>
-    </head>
-    <body>
-      <h1>🎉 تم التشغيل بنجاح</h1>
-        <p>الموقع يعمل الآن على Firebase.</p>
-        </body>
-        </html>
+<meta charset="UTF-8">
+<title>لعبة حرب</title>
+<style>
+body {
+  margin: 0;
+  background: #111;
+}
+canvas {
+  display: block;
+  margin: auto;
+  background: #222;
+}
+</style>
+</head>
+<body>
+
+<canvas id="game" width="400" height="600"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let player = { x: 200, y: 500, size: 20 };
+let bullets = [];
+let enemies = [];
+
+function drawPlayer() {
+  ctx.fillStyle = "lime";
+  ctx.fillRect(player.x, player.y, player.size, player.size);
+}
+
+function drawBullets() {
+  ctx.fillStyle = "yellow";
+  bullets.forEach(b => {
+    ctx.fillRect(b.x, b.y, 5, 10);
+    b.y -= 5;
+  });
+}
+
+function drawEnemies() {
+  ctx.fillStyle = "red";
+  enemies.forEach(e => {
+    ctx.fillRect(e.x, e.y, 20, 20);
+    e.y += 1;
+  });
+}
+
+function spawnEnemy() {
+  enemies.push({ x: Math.random() * 380, y: 0 });
+}
+
+function shoot() {
+  bullets.push({ x: player.x + 8, y: player.y });
+}
+
+document.addEventListener("mousemove", e => {
+  player.x = e.offsetX - 10;
+});
+
+document.addEventListener("click", shoot);
+
+setInterval(spawnEnemy, 1000);
+
+function gameLoop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawPlayer();
+  drawBullets();
+  drawEnemies();
+  requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+</script>
+
+</body>
+</html>
