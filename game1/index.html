@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ببجي 3D - نسخة الهاتف</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: manipulation;
+        }
+        
+        body {
+            font-family: 'Cairo', 'Segoe UI', sans-serif;
+            background: #0a0a1a;
+            color: #fff;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+        }
+        
+        #gameContainer {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        
+        #donationBox {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            z-index: 100;
+            background: linear-gradient(135deg, #ff9900, #ff5500);
+            color: #000;
+            padding: 12px 20px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 16px;
+            box-shadow: 0 5px 15px rgba(255, 85, 0, 0.5);
+            border: 2px solid #ffcc00;
+            cursor: pointer;
+            transition: all 0.3s;
+            direction: ltr;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        #donationBox:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(255, 85, 0, 0.7);
+        }
+        
+        #donationBox:active {
+            transform: scale(0.98);
+        }
+        
+        #donationBox i {
+            font-size: 20px;
+        }
+        
+        #donationModal {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            padding: 20px;
+            direction: rtl;
+        }
+        
+        .donation-content {
+            background: linear-gradient(145deg, #1a1a2e, #16213e);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            border: 3px solid #ff9900;
+            box-shadow: 0 10px 30px rgba(255, 153, 0, 0.3);
+            text-align: center;
+        }
+        
+        .donation-content h2 {
+            color: #ff9900;
+            margin-bottom: 15px;
+            font-size: 26px;
+        }
+        
+        .donation-content p {
+            margin-bottom: 20px;
+            line-height: 1.6;
+            color: #e0e0e0;
+        }
+        
+        .donation-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin: 25px 0;
+        }
+        
+        .donation-option {
+            background: rgba(255, 153, 0, 0.1);
+            border: 2px solid #ff9900;
+            border-radius: 10px;
+            padding: 15px;
+            min-width: 100px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .donation-option:hover {
+            background: rgba(255, 153, 0, 0.3);
+            transform: translateY(-5px);
+        }
+        
+        .donation-option.selected {
+            background: rgba(255, 153, 0, 0.5);
+            box-shadow: 0 5px 15px rgba(255, 153, 0, 0.4);
+        }
+        
+        .donation-amount {
+            font-size: 22px;
+            font-weight: bold;
+            color: #ffcc00;
+            margin-bottom: 5px;
+        }
+        
+        .donation-text {
+            font-size: 14px;
+            color: #aaa;
+        }
+        
+        #closeDonation {
+            background: #ff3333;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s;
+        }
+        
+        #closeDonation:hover {
+            background: #ff5555;
+            transform: scale(1.05);
+        }
+        
+        .mobile-controls {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 50;
+        }
+        
+        .joystick-container {
+            width: 150px;
+            height: 150px;
+            position: relative;
+        }
+        
+        .joystick-base {
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .joystick-handle {
+            position: absolute;
+            width: 70px;
+            height: 70px;
+            background: rgba(255, 153, 0, 0.8);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 2px solid #ffcc00;
+            box-shadow: 0 0 15px rgba(255, 153, 0, 0.5);
+        }
+        
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 150px;
+        }
+        
+        .action-button {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+            margin-left: auto;
+        }
+        
+        .action-button:active {
+            transform: scale(0.9);
+            background: rgba(255, 153, 0, 0.5);
+        }
+        
+        .action-button i {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        #jumpButton {
+            border-color: #4CAF50;
+        }
+        
+        #shootButton {
+            border-color: #f44336;
+        }
+        
+        #reloadButton {
+            border-color: #2196F3;
+        }
+        
+        #gameUI {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 15px;
+            border: 2px solid #ff9900;
+            min-width: 200px;
+            direction: rtl;
+        }
+        
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        
+        .stat-label {
+            color: #aaa;
+        }
+        
+        .stat-value {
+            color: #fff;
+            font-weight: bold;
+        }
+        
+        .health-bar {
+            height: 15px;
+            background: rgba(255, 0, 0, 0.3);
+            border-radius: 7px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(to right, #f00, #0f0);
+            border-radius: 7px;
+            width: 100%;
+        }
+        
+        #gameMenu {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        #gameMenu h1 {
+            color: #ff9900;
+            font-size: 40px;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(255, 153, 0, 0.7);
+        }
+        
+        #gameMenu p {
+            color: #ccc;
+            margin-bottom: 30px;
+            font-size: 18px;
+            max-width: 500px;
+        }
+        
+        .menu-button {
+            background: linear-gradient(135deg, #ff9900, #ff5500);
+            color: #000;
+            border: none;
+            padding: 18px 40px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 10px;
+            width: 280px;
+            max-width: 90%;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(255, 85, 0, 0.4);
+        }
+        
+        .menu-button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(255, 85, 0, 0.6);
+        }
+        
+        .menu-button:active {
+            transform: translateY(0);
+        }
+        
+        .mobile-only {
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-only {
+                display: block;
+            }
+            
+            #gameUI {
+                top: 10px;
+                right: 10px;
+                padding: 10px;
+                min-width: 160px;
+            }
+            
+            .joystick-container {
+                width: 120px;
+                height: 120px;
+            }
+            
+            .joystick-handle {
+                width: 60px;
+                height: 60px;
+            }
+            
+            .action-button {
+                width: 70px;
+                height: 70px;
+                font-size: 12px;
+            }
+            
+            .action-button i {
+                font-size: 20px;
+            }
+            
+            #donationBox {
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            #gameUI {
+                min-width: 140px;
+                font-size: 14px;
+            }
+            
+            .joystick-container {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .joystick-handle {
+                width: 50px;
+                height: 50px;
+            }
+            
+            .action-button {
+                width: 60px;
+                height: 60px;
+                font-size: 11px;
+            }
+            
+            .action-button i {
+                font-size: 18px;
+            }
+        }
+        
+        #message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 18px;
+            z-index: 150;
+            display: none;
+            border: 2px solid #ff9900;
+            text-align: center;
+            max-width: 80%;
+        }
+        
+        #touchArea {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="donationBox">
+            <i class="fas fa-heart"></i> دعم المطور
+        </div>
+        
+        <div id="gameMenu">
+            <h1>ببجي 3D للهاتف</h1>
+            <p>لعبة بقاء ثلاثية الأبعاد مصممة خصيصًا للهواتف. تحكم في شخصيتك، ابحث عن الأسلحة، واهزم الأعداء!</p>
+            <button id="startButton" class="menu-button">
+                <i class="fas fa-play"></i> بدء اللعبة
+            </button>
+            <button id="instructionsButton" class="menu-button">
+                <i class="fas fa-info-circle"></i> التعليمات
+            </button>
+            <div class="mobile-only">
+                <p style="margin-top: 30px; color: #ff9900; font-size: 16px;">
+                    <i class="fas fa-mobile-alt"></i> مصمم للشاشات اللمس
+                </p>
+            </div>
+        </div>
+        
+        <div id="gameUI" style="display: none;">
+            <div class="stat-row">
+                <span class="stat-label">الصحة:</span>
+                <span class="stat-value" id="healthValue">100</span>
+            </div>
+            <div class="health-bar">
+                <div id="healthFill" class="health-fill" style="width: 100%"></div>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">الذخيرة:</span>
+                <span class="stat-value" id="ammoValue">30</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">الأعداء:</span>
+                <span class="stat-value" id="enemiesValue">5</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">القتلى:</span>
+                <span class="stat-value" id="killsValue">0</span>
+            </div>
+        </div>
+        
+        <div class="mobile-controls" style="display: none;">
+            <div class="joystick-container">
+                <div class="joystick-base"></div>
+                <div class="joystick-handle" id="joystickHandle"></div>
+            </div>
+            
+            <div class="action-buttons">
+                <div class="action-button" id="jumpButton">
+                    <i class="fas fa-arrow-up"></i>
+                    <span>قفز</span>
+                </div>
+                <div class="action-button" id="shootButton">
+                    <i class="fas fa-crosshairs"></i>
+                    <span>أطلق</span>
+                </div>
+                <div class="action-button" id="reloadButton">
+                    <i class="fas fa-redo"></i>
+                    <span>إعادة تحميل</span>
+                </div>
+            </div>
+        </div>
+        
+        <div id="touchArea"></div>
+        
+        <div id="message"></div>
+    </div>
+    
+    <div id="donationModal">
+        <div class="donation-content">
+            <h2>دعم صانع اللعبة</h2>
+            <p>هل استمتعت باللعبة؟ ساعد المطور على الاستمرار في صنع ألعاب رائعة من خلال التبرع. كل تبرع صغير يساعد!</p>
+            
+            <div class="donation-options">
+                <div class="donation-option" data-amount="5">
+                    <div class="donation-amount">5$</div>
+                    <div class="donation-text">شكرًا لدعمك!</div>
+                </div>
+                <div class="donation-option" data-amount="10">
+                    <div class="donation-amount">10$</div>
+                    <div class="donation-text">دعم رائع!</div>
+                </div>
+                <div class="donation-option" data-amount="20">
+                    <div class="donation-amount">20$</div>
+                    <div class="donation-text">مشجع مذهل!</div>
+                </div>
+                <div class="donation-option" data-amount="50">
+                    <div class="donation-amount">50$</div>
+                    <div class="donation-text">بطل حقيقي!</div>
+                </div>
+            </div>
+            
+            <p style="font-size: 14px; color: #aaa; margin-top: 20px;">
+                <i class="fas fa-lock"></i> جميع المعاملات آمنة ومشفرة
+            </p>
+            
+            <button id="closeDonation">
+                <i class="fas fa-times"></i> إغلاق
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // حالة اللعبة
+        let gameRunning = false;
+        let scene, camera, renderer;
+        let player, enemies = [], weapons = [], bullets = [];
+        let joystickActive = false;
+        let joystickVector = { x: 0, y: 0 };
+        let playerVelocity = { x: 0, y: 0, z: 0 };
+        let playerOnGround = false;
+        let playerHealth = 100;
+        let playerAmmo = 30;
+        let kills = 0;
+        let enemyCount = 5;
+        let lastShotTime = 0;
+        let shootCooldown = 300;
+        let selectedDonationAmount = 0;
+        
+        // تهيئة المشهد ثلاثي الأبعاد
+        function initThreeJS() {
+            // إنشاء المشهد
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0x0a0a1a, 10, 100);
+            
+            // إنشاء الكاميرا
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 5, 10);
+            
+            // إنشاء العارض
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.getElementById('gameContainer').appendChild(renderer.domElement);
+            
+            // إضافة الضوء
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(10, 20, 5);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.camera.left = -50;
+            directionalLight.shadow.camera.right = 50;
+            directionalLight.shadow.camera.top = 50;
+            directionalLight.shadow.camera.bottom = -50;
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            scene.add(directionalLight);
+            
+            // إنشاء الأرض
+            const groundGeometry = new THREE.PlaneGeometry(100, 100);
+            const groundMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x2d5a27,
+                roughness: 0.8
+            });
+            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+            
+            // إنشاء بعض الأشجار والمباني
+            createEnvironment();
+            
+            // إنشاء اللاعب
+            createPlayer();
+            
+            // إنشاء الأعداء
+            for (let i = 0; i < enemyCount; i++) {
+                createEnemy();
+            }
+            
+            // إنشاء الأسلحة
+            createWeapons();
+            
+            // معالجة تغيير حجم النافذة
+            window.addEventListener('resize', onWindowResize);
+            
+            // بدء العرض
+            animate();
+        }
+        
+        function createEnvironment() {
+            // إضافة بعض الأشجار
+            for (let i = 0; i < 20; i++) {
+                const tree = new THREE.Group();
+                
+                const trunkGeometry = new THREE.CylinderGeometry(0.3, 0.5, 3);
+                const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+                const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+                trunk.castShadow = true;
+                trunk.position.y = 1.5;
+                tree.add(trunk);
+                
+                const leavesGeometry = new THREE.ConeGeometry(2, 4, 8);
+                const leavesMaterial = new THREE.MeshStandardMaterial({ color: 0x2d5a27 });
+                const leaves = new THREE.Mesh(leavesGeometry, leavesMaterial);
+                leaves.castShadow = true;
+                leaves.position.y = 4;
+      
